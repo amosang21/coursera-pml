@@ -110,7 +110,8 @@ pml_write_files(pred)  # Create output files with the predicted answers.
 - > pred
  [1] B A A A A E D D A A B C B A E E A B B B
 Levels: A B C D E
-==> Score: 18/20. No 3 and 8 incorrect. 
+==> Score: 18/20. No 3 and 8 incorrect. 20/20 after correction.
+===> Correct answers are 3=A, 8=B. Can use the confusion matrix to deduct answers.
 Time taken to generate modFit -> ~15 mins
 -->
 
