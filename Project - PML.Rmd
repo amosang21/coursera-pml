@@ -1,23 +1,118 @@
 ---
 title: "Project - Practical Machine Learning"
-date: "Saturday, January 03, 2015"
 output:
   html_document:
     theme: cerulean
 ---
+## Executive Summary
+We begin by first downloading the necessary packages and data required for the analysis.
+Next, data cleansing is performed, using a variety of techniques to remove variables which are not useful. Such variables could contain mainly blanks, NAs, or have low variation in their values, all of which makes them unsuitable to use as predictors.  
+For building of the model, the **random forest** method is used. This method *does not require cross-validation*, as the latter is built into the random forest method already. The expected **out-of-sample error** rate is expected to be about **5.4%**, as shown in the final model summary output.  
+Lastly, the model was used to predict the outcome variable, *classe*, for the test set data. **18 out of 20 correct predictions** were obtained, when the files were submitted to the Coursera grading system. This approximately corresponds to our expected out-of-sample error rate. 
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Analysis Steps
+### Package and Data Loading
+Here, the necesary packages are loaded, utility functions are created (eg: pml_write_files()), and the CSV data files downloaded and loaded. For brevity, all output has been suppressed, but you can view it in the source files in the GitHub repository, if desired.
+```{r include=F}
+# Set random seed for reproducibility.
+set.seed(12345)
+
+# Function for creating the files needed for online submission. Function was provided in the project submission instructions file from the instructor.
+pml_write_files = function(x){
+    n = length(x)
+    for(i in 1:n){
+        filename = paste0("problem_id_",i,".txt")
+        write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+    }
+}
+#--------------------------------------#
+# Download train and test CSV files, if they're not found in the working directory.
+if (file.exists("pml-training.csv") == F) {
+    download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pmltraining.csv", "pml-training.csv")
+}
+
+if (file.exists("pml-testing.csv") == F) {
+    download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pmltesting.csv", "pml-testing.csv")
+}
+
+# Load both data sets.
+train <- read.csv("pml-training.csv")
+test <- read.csv("pml-testing.csv")
+
+# Load required libraries.
+library(caret)  # caret also loads ggplot2.
+library(randomForest)
+```
+
+### Data Cleansing
+Next, data cleansing if performed. Firstly, we use nearZeroVar() to look for and remove variables with near zero variation, because they're not useful as predictors. This has the effect of removing all the columns with blanks. While other methods exist for removing blanks, we find that this is a good general purpose technique, as it removes other variables which have little variation as well. 
+
+Secondly, we also remove columns which consist mainly of NA values, as these are also not useful as predictors. 
+
+Thirdly, we remove the first 6 variables, as they appear irrelevant. These variables include *timestamps*, for these have nothing to do with the weight-lifting activities. Similarly, the variable *X* appears to be a sequential running number, which also should not be included.  
+Variables such as *user_name* should also be excluded, because it's illogical to use someone's name as a predictor (new names could be introduced in future test sets). It also discounts the learning effect (ie: a person will eventually start to lift the weights correctly, more times than incorrectly), which can potentially trip up our machine learning algorithm.
+
+Lastly, as the data set at this point is still too large to fit into our computer's memory, we need to do random subsampling to create a smaller data set. We used createDataPartition() with p=0.10, resulting in data set with 1964 rows (down from 19622), which proved more manageable for train() to handle.
 
 ```{r}
-summary(cars)
+# Preprocessing. Need to clean - remove missing values, NAs, etc
+## Eliminate columns with near zero variation, because these are not useful as predictors.
+nzv <- nearZeroVar(train, saveMetrics = T)
+
+train2 <- train[,rownames(nzv[grep("FALSE", nzv$nzv),])]  # variables with near zero variation removed. Note that NAs are not handled.
+
+## Eliminate columns with > 19000 NAs. From observation, certain columns consistently contain majority NA values, and should be removed.
+tmp <- train2
+tmp <- tmp[, which(as.numeric(colSums(!is.na(tmp))) > 19000)] 
+train3 <- tmp  # Ref: http://r.789695.n4.nabble.com/R-How-to-count-the-number-of-NAs-in-each-column-of-a-df-td818077.html
+
+train4 <- train3[,7:length(train3)]  # First 6 variables don't look relevant. Eliminate them.
+
+# Need to further reduce the size in train4 (19622 records) to fit my memory size. Using ~10% (ie: 2000 records).
+idx_train_subset <- createDataPartition(y=train4$classe, p=0.1, list=F)
+train5 <- train4[idx_train_subset,]
 ```
 
-You can also embed plots, for example:
+### Cross-validation
+For random forests, there is no need for cross-validation or a separate test set to get an unbiased estimate of the test set error. This is shown in the following URLs:  
+- [http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr](http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr)  
+- [https://www.kaggle.com/c/titanic-gettingStarted/forums/t/10089/random-forest-understanding-k-fold-cross-validation](https://www.kaggle.com/c/titanic-gettingStarted/forums/t/10089/random-forest-understanding-k-fold-cross-validation)
 
-```{r, echo=FALSE}
-plot(cars)
+### Model Training and Expected Out-of-sample Error Rate
+The reduced training data set is then used to train the model, using the random forest method. As can be seen below, the model had ntree=50. mtry=27 was found to be optimal, as this resulted in the highest accuracy value of 0.925. 
+
+The expected out-of-sample error rate is **5.4%**
+
+```{r cache=T}
+modFit <- train(classe~., data=train5, method="rf", prox=T)
+modFit  # Output a summary of the model.
+modFit$finalModel  #Output summary of final model
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### Prediction, Output, and Results
+The model is then used on the test set, to predict the values for the outcome variable *classe*, for each of the 20 rows. Upon submission, 18 out of 20 correct predictions was obtained. This approximately corresponds to the out-of-sample error rate (it's a bit off, because of the small test set size of 20, but should converge is the test set is larger).
+
+```{r}
+pred <- predict(modFit, test)
+pml_write_files(pred)  # Create output files with the predicted answers.
+
+```
+  
+  
+
+
+<!-- ########################################################## -->
+<!-- MISC INFO
+- Source of Project dataset. http://groupware.les.inf.puc-rio.br/har. Classe=A means exactly correct. B to E are different error types. 160 columns incl classe.
+- How to make HTML in GitHub viewable in browser. http://htmlpreview.github.io/
+
+- > pred
+ [1] B A A A A E D D A A B C B A E E A B B B
+Levels: A B C D E
+==> Score: 18/20. No 3 and 8 incorrect. 
+Time taken to generate modFit -> ~15 mins
+-->
+
+
+
