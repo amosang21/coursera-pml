@@ -79,6 +79,8 @@ For random forests, there is no need for cross-validation or a separate test set
 - [http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr](http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr)  
 - [https://www.kaggle.com/c/titanic-gettingStarted/forums/t/10089/random-forest-understanding-k-fold-cross-validation](https://www.kaggle.com/c/titanic-gettingStarted/forums/t/10089/random-forest-understanding-k-fold-cross-validation)
 
+Also, the course instructor mentions that the *train()* function handles cross-validation for us (See lecture video on random forest, last slide). Hence the lack of explicit handling of cross-validation here.
+
 ### Model Training and Expected Out-of-sample Error Rate
 The reduced training data set is then used to train the model, using the random forest method. As can be seen below, the model had ntree=50. mtry=27 was found to be optimal, as this resulted in the highest accuracy value of 0.925. 
 

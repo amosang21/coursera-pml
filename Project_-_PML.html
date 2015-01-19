@@ -91,6 +91,7 @@ train5 &lt;- train4[idx_train_subset,]</code></pre>
 <div id="cross-validation" class="section level3">
 <h3>Cross-validation</h3>
 <p>For random forests, there is no need for cross-validation or a separate test set to get an unbiased estimate of the test set error. This is shown in the following URLs:<br />- <a href="http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr"><a href="http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr">http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr</a></a><br />- <a href="https://www.kaggle.com/c/titanic-gettingStarted/forums/t/10089/random-forest-understanding-k-fold-cross-validation"><a href="https://www.kaggle.com/c/titanic-gettingStarted/forums/t/10089/random-forest-understanding-k-fold-cross-validation">https://www.kaggle.com/c/titanic-gettingStarted/forums/t/10089/random-forest-understanding-k-fold-cross-validation</a></a></p>
+<p>Also, the course instructor mentions that the <em>train()</em> function handles cross-validation for us (See lecture video on random forest, last slide). Hence the lack of explicit handling of cross-validation here.</p>
 </div>
 <div id="model-training-and-expected-out-of-sample-error-rate" class="section level3">
 <h3>Model Training and Expected Out-of-sample Error Rate</h3>
@@ -148,7 +149,8 @@ pml_write_files(pred)  # Create output files with the predicted answers.</code><
 - > pred
  [1] B A A A A E D D A A B C B A E E A B B B
 Levels: A B C D E
-==> Score: 18/20. No 3 and 8 incorrect. 
+==> Score: 18/20. No 3 and 8 incorrect. 20/20 after correction.
+===> Correct answers are 3=A, 8=B. Can use the confusion matrix to deduct answers.
 Time taken to generate modFit -> ~15 mins
 -->
 
